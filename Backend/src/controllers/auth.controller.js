@@ -94,20 +94,41 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "Profile pic is required" });
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
+    console.log("Starting Cloudinary upload...");
 
-    res.status(200).json(updatedUser);
+    // Check if credentials are properly loaded
+    console.log("Cloudinary Config:", {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? "Set" : "Not set",
+      api_key: process.env.CLOUDINARY_API_KEY ? "Set" : "Not set",
+      api_secret: process.env.CLOUDINARY_API_SECRET ? "Set" : "Not set",
+    });
+
+    // Upload with detailed error handling
+    try {
+      const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+        resource_type: "image",
+      });
+      console.log("Upload successful:", uploadResponse.secure_url);
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { profilePic: uploadResponse.secure_url },
+        { new: true }
+      );
+
+      res.status(200).json(updatedUser);
+    } catch (cloudinaryError) {
+      console.error("Cloudinary upload error:", cloudinaryError);
+      return res.status(500).json({
+        message: "Failed to upload image",
+        error: cloudinaryError.message,
+      });
+    }
   } catch (error) {
-    console.log("error in update profile:", error);
+    console.error("Error in update profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 export const checkAuth = (req, res) => {
   try {
     res.status(200).json(req.user);

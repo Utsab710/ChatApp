@@ -10,17 +10,59 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Create image element to resize
+    const img = document.createElement("img");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Create a FileReader to read the image
     const reader = new FileReader();
 
-    reader.readAsDataURL(file);
+    // Set up the FileReader onload function
+    reader.onload = function (event) {
+      // Set the source of the image to the result of the FileReader
+      img.onload = function () {
+        // Max dimensions
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
 
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
+        // Calculate the new dimensions
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        // Set canvas dimensions to the new dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw the image on the canvas
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Get the resized image as a base64 string
+        const resizedBase64 = canvas.toDataURL("image/jpeg", 0.7); // Reduced quality (0.7)
+
+        // Update UI and send to server
+        setSelectedImg(resizedBase64);
+        updateProfile({ profilePic: resizedBase64 });
+      };
+
+      img.src = event.target.result;
     };
-  };
 
+    // Read the file
+    reader.readAsDataURL(file);
+  };
   return (
     <div className="h-screen pt-20">
       <div className="max-w-2xl mx-auto p-4 py-8">
