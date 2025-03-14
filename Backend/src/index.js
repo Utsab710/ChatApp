@@ -7,6 +7,7 @@ import cors from "cors";
 import messageRoutes from "./routes/message.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { app, server } from "./lib/socket.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +16,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 dotenv.config();
 
-const app = express();
+app;
 const PORT = process.env.PORT || 5000; // ✅ Default to 5000 if undefined
 
 console.log("PORT from .env:", PORT); // ✅ Debugging step
@@ -24,7 +25,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   })
 );
@@ -35,7 +36,7 @@ app.use("/api/messages", messageRoutes);
 
 // Connect to DB before starting server
 dbConnect().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log("Server is running on port:" + PORT);
   });
 });
